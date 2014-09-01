@@ -1521,7 +1521,9 @@ var Reveal = (function(){
 		// Show fragment, if specified
 		if( typeof f !== 'undefined' ) {
 			navigateFragment( f );
-		}
+		} else {
+            navigateFragment();
+        }
 
 		// Dispatch an event if the slide changed
 		var slideChanged = ( indexh !== indexhBefore || indexv !== indexvBefore );
@@ -2077,12 +2079,12 @@ var Reveal = (function(){
 	function availableFragments() {
 
 		if( currentSlide && config.fragments ) {
-			var fragments = currentSlide.querySelectorAll( '.fragment' );
-			var hiddenFragments = currentSlide.querySelectorAll( '.fragment:not(.visible)' );
+			var cur = currentFragmentIndex();
+			var last = lastFragmentIndex();
 
 			return {
-				prev: fragments.length - hiddenFragments.length > 0,
-				next: !!hiddenFragments.length
+				prev: cur > 0,
+				next: cur < last
 			};
 		}
 		else {
@@ -2299,7 +2301,7 @@ var Reveal = (function(){
 
 		fragments = toArray( fragments );
 
-		var ordered = [],
+		var ordered = [[]],
 			unordered = [],
 			sorted = [];
 
@@ -2341,12 +2343,31 @@ var Reveal = (function(){
 		return sorted;
 
 	}
+    
+    function currentFragmentIndex() {
+        var lastVisibleFragment = sortFragments( currentSlide.querySelectorAll( '.fragment.visible' ) ).pop();
 
+        if( lastVisibleFragment ) {
+            return parseInt( lastVisibleFragment.getAttribute( 'data-fragment-index' ) || 0, 10 );
+        }
+        return 0;
+    }
+
+    function lastFragmentIndex() {
+        var lastFragment = sortFragments( currentSlide.querySelectorAll( '.fragment' ) ).pop();
+
+        if( lastFragment ) {
+            return parseInt( lastFragment.getAttribute( 'data-fragment-index' ) || 0, 10 );
+        }
+        return 0;
+    }
+    
+    
 	/**
 	 * Navigate to the specified slide fragment.
 	 *
 	 * @param {Number} index The index of the fragment that
-	 * should be shown, -1 means all are invisible
+	 * should be shown, 0 means initial slide status
 	 * @param {Number} offset Integer offset to apply to the
 	 * fragment index
 	 *
@@ -2359,23 +2380,25 @@ var Reveal = (function(){
 
 			var fragments = sortFragments( currentSlide.querySelectorAll( '.fragment' ) );
 			if( fragments.length ) {
-
+                var curIdx = currentFragmentIndex();
+                var lastIdx = lastFragmentIndex();
+                
 				// If no index is specified, find the current
 				if( typeof index !== 'number' ) {
-					var lastVisibleFragment = sortFragments( currentSlide.querySelectorAll( '.fragment.visible' ) ).pop();
-
-					if( lastVisibleFragment ) {
-						index = parseInt( lastVisibleFragment.getAttribute( 'data-fragment-index' ) || 0, 10 );
-					}
-					else {
-						index = -1;
-					}
+					index = curIdx;
 				}
 
 				// If an offset is specified, apply it to the index
 				if( typeof offset === 'number' ) {
 					index += offset;
 				}
+                
+                if(index < 0){
+                    index = 0;
+                }
+                if(index > lastIdx){
+                    index = lastIdx;
+                }
 
 				var fragmentsShown = [],
 					fragmentsHidden = [];
