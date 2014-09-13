@@ -9,8 +9,9 @@ var Reveal = (function(){
 
 	'use strict';
 
-	var SLIDES_SELECTOR = '.reveal .slides section',
-		HORIZONTAL_SLIDES_SELECTOR = '.reveal .slides>section',
+	var SLIDES_SELECTOR = '.reveal .slides section.slide',
+        STACK_SELECTOR = '.reveal .slides section.stack',
+		HORIZONTAL_SLIDES_SELECTOR = '.reveal .slides section.Hlayout',
 		VERTICAL_SLIDES_SELECTOR = '.reveal .slides>section.present>section',
 		HOME_SLIDE_SELECTOR = '.reveal .slides>section:first-of-type',
 
@@ -394,9 +395,10 @@ var Reveal = (function(){
 		dom.controlsPrev = toArray( document.querySelectorAll( '.navigate-prev' ) );
 		dom.controlsNext = toArray( document.querySelectorAll( '.navigate-next' ) );
 
+        setupSlides();
 	}
 
-	/**
+    /**
 	 * Creates an HTML element and returns a reference to it.
 	 * If the element already exists the existing instance will
 	 * be returned.
@@ -415,6 +417,33 @@ var Reveal = (function(){
 		return node;
 
 	}
+
+    /**
+	 * Walks all the slides and adapts the DOM for the presentation if needed.
+	 */
+    function setupSlides() {
+        toArray(dom.slides.querySelectorAll('.slides > section')).forEach(setupHLayoutDOM);
+    }
+    
+    function setupHLayoutDOM(hlayout){
+        hlayout.classList.add('Hlayout');
+        var vlayout = toArray(hlayout.querySelectorAll('.slides > section.Hlayout > section'));
+        if(vlayout.length){
+            // this is a stack
+            hlayout.classList.add('stack');
+            vlayout.forEach(setupVLayoutDOM);
+        } else {
+            // this is a slide
+            setupSlideDOM(hlayout);
+        }
+    }
+    function setupVLayoutDOM(vlayout){
+        vlayout.classList.add('Vlayout');
+        setupSlideDOM(vlayout);
+    }
+    function setupSlideDOM(slide){
+        slide.classList.add('slide');
+    }
 
 	/**
 	 * Creates the slide background elements and appends them
@@ -1085,14 +1114,7 @@ var Reveal = (function(){
 				}
 
 				if( config.center || slide.classList.contains( 'center' ) ) {
-					// Vertical stacks are not centred since their section
-					// children will be
-					if( slide.classList.contains( 'stack' ) ) {
-						slide.style.top = 0;
-					}
-					else {
-						slide.style.top = Math.max( - ( getAbsoluteHeight( slide ) / 2 ) - slidePadding, -slideHeight / 2 ) + 'px';
-					}
+                    slide.style.top = Math.max( - ( getAbsoluteHeight( slide ) / 2 ) - slidePadding, -slideHeight / 2 ) + 'px';
 				}
 				else {
 					slide.style.top = '';
@@ -1288,7 +1310,7 @@ var Reveal = (function(){
 			}, 1 );
 
 			// Select all slides
-			toArray( document.querySelectorAll( SLIDES_SELECTOR ) ).forEach( function( slide ) {
+			toArray( document.querySelectorAll( HORIZONTAL_SLIDES_SELECTOR + ', ' + SLIDES_SELECTOR ) ).forEach( function( slide ) {
 				// Resets all transforms to use the external styles
 				transformElement( slide, '' );
 
@@ -1550,7 +1572,7 @@ var Reveal = (function(){
 			if ( document.querySelector( HOME_SLIDE_SELECTOR ).classList.contains( 'present' ) ) {
 				// Launch async task
 				setTimeout( function () {
-					var slides = toArray( document.querySelectorAll( HORIZONTAL_SLIDES_SELECTOR + '.stack') ), i;
+					var slides = toArray( document.querySelectorAll( STACK_SELECTOR ) ), i;
 					for( i in slides ) {
 						if( slides[i] ) {
 							// Reset stack
@@ -1591,6 +1613,9 @@ var Reveal = (function(){
 		removeEventListeners();
 		addEventListeners();
 
+        // Ensure slides conform to our DOM requirements
+        setupSlides();
+        
 		// Force a layout to make sure the current config is accounted for
 		layout();
 
@@ -1642,18 +1667,9 @@ var Reveal = (function(){
 	 */
 	function sortAllFragments() {
 
-		var horizontalSlides = toArray( document.querySelectorAll( HORIZONTAL_SLIDES_SELECTOR ) );
-		horizontalSlides.forEach( function( horizontalSlide ) {
-
-			var verticalSlides = toArray( horizontalSlide.querySelectorAll( 'section' ) );
-			verticalSlides.forEach( function( verticalSlide, y ) {
-
-				sortFragments( verticalSlide.querySelectorAll( '.fragment' ) );
-
-			} );
-
-			if( verticalSlides.length === 0 ) sortFragments( horizontalSlide.querySelectorAll( '.fragment' ) );
-
+		var slides = toArray( document.querySelectorAll( SLIDES_SELECTOR ) );
+		slides.forEach( function( slide ) {
+            sortFragments( slide.querySelectorAll( '.fragment' ) );
 		} );
 
 	}
@@ -1825,7 +1841,7 @@ var Reveal = (function(){
 			var horizontalSlides = toArray( document.querySelectorAll( HORIZONTAL_SLIDES_SELECTOR ) );
 
 			// The number of past and total slides
-			var totalCount = document.querySelectorAll( SLIDES_SELECTOR + ':not(.stack)' ).length;
+			var totalCount = document.querySelectorAll( SLIDES_SELECTOR ).length;
 			var pastCount = 0;
 
 			// Step through all slides and count the past ones
@@ -2935,6 +2951,8 @@ var Reveal = (function(){
 	 * closest approximate horizontal slide using this equation:
 	 *
 	 * ( clickX / presentationWidth ) * numberOfSlides
+     *
+     * TODO: This formula does not match the actual progress display!
 	 */
 	function onProgressClicked( event ) {
 
