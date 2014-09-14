@@ -386,16 +386,20 @@ body {
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	left: 0;
+	top: 50%;
+	left: 50%;
 	margin: auto;
 
 	overflow: visible;
 	z-index: 1;
 	text-align: center;
 
+    
+    -webkit-transform: translate(-50%,-50%);
+       -moz-transform: translate(-50%,-50%);
+        -ms-transform: translate(-50%,-50%);
+            transform: translate(-50%,-50%);
+    
 	-webkit-transition: -webkit-perspective .4s ease;
 	   -moz-transition: -moz-perspective .4s ease;
 	        transition: perspective .4s ease;
@@ -419,8 +423,15 @@ body {
 .reveal .slides>section>section {
 	display: none;
 	position: absolute;
-	width: 100%;
-	padding: 20px 0px;
+    left: 0%;
+    top: 0%;
+
+    -webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+    
+    width: 100%;
+    height: 100%;
 
 	z-index: 10;
 
@@ -468,9 +479,14 @@ body {
 }
 
 .reveal .slides>section.stack {
-	padding-top: 0;
-	padding-bottom: 0;
+    padding: 0px 0px;
 }
+
+.reveal .slides>section:not(.stack),
+.reveal .slides>section>section {
+    padding: 20px 0px;
+}
+
 
 .reveal .slides>section.present,
 .reveal .slides>section>section.present {
@@ -491,6 +507,7 @@ body {
 .reveal .slides>section.past,
 .reveal .slides>section>section.past {
 	pointer-events: none;
+	opacity: 0;
 }
 
 .reveal.overview .slides>section,
@@ -498,13 +515,42 @@ body {
 	pointer-events: auto;
 }
 
-.reveal .slides>section.past,
-.reveal .slides>section.future,
-.reveal .slides>section>section.past,
-.reveal .slides>section>section.future {
-	opacity: 0;
+
+/*********************************************
+ * SLIDE CONTENTS
+ *********************************************/
+.reveal .slides .slide-content {
+    width: 100%;
 }
 
+.reveal.center .slides .slide-body {
+    min-height: 0;
+    position: absolute;
+    top: 50%;
+    -webkit-transform: translate(0%,-50%);
+       -moz-transform: translate(0%,-50%);
+        -ms-transform: translate(0%,-50%);
+            transform: translate(0%,-50%);
+}
+
+/*********************************************
+ * LAYOUT DEBUGGING
+ *********************************************/
+
+.reveal.show-canvas .slides {
+    background: rgba(255,255,255,0.3);
+}
+
+.reveal.show-canvas .slides>section,
+.reveal.show-canvas .slides>section>section {
+    background: rgba(255,0,0,0.3);
+}
+.reveal.show-canvas .slides>section.stack {
+    background: rgba(0,0,255,0.3);
+}
+.reveal.show-canvas .slides .slide-body {
+    background: rgba(0,255,0,0.3);
+}
 
 /*********************************************
  * SLIDE TRANSITION
@@ -986,7 +1032,7 @@ body {
 }
 
 .reveal.overview .slides section {
-	height: 700px;
+/*	height: 700px;   */
 	overflow: hidden;
 	opacity: 1 !important;
 	visibility: visible !important;

@@ -1392,33 +1392,6 @@
 				transformElement( dom.slides, 'translate(-50%, -50%) scale('+ scale +')' );
 			}
 
-			// Select all slides, vertical and horizontal
-			var slides = toArray( dom.wrapper.querySelectorAll( SLIDES_SELECTOR ) );
-
-			for( var i = 0, len = slides.length; i < len; i++ ) {
-				var slide = slides[ i ];
-
-				// Don't bother updating invisible slides
-				if( slide.style.display === 'none' ) {
-					continue;
-				}
-
-				if( config.center || slide.classList.contains( 'center' ) ) {
-					// Vertical stacks are not centred since their section
-					// children will be
-					if( slide.classList.contains( 'stack' ) ) {
-						slide.style.top = 0;
-					}
-					else {
-						slide.style.top = Math.max( ( ( size.height - getAbsoluteHeight( slide ) ) / 2 ) - slidePadding, 0 ) + 'px';
-					}
-				}
-				else {
-					slide.style.top = '';
-				}
-
-			}
-
 			updateProgress();
 			updateParallax();
 
@@ -1430,10 +1403,43 @@
 	 * Applies layout logic to the contents of all slides in
 	 * the presentation.
 	 */
-	function layoutSlideContents( width, height, padding ) {
-
+    function layoutSlideContents( width, height, padding ) {
+        
+        // Move slide content into appropriate layout containers
+        var bodyDivTpl = document.createElement('div');
+        bodyDivTpl.classList.add('slide-content');
+        bodyDivTpl.classList.add('slide-body');
+        
+		toArray( dom.slides.querySelectorAll( SLIDES_SELECTOR ) ).forEach( function( slide ) {
+            //TODO: more robust detection of vertical slides
+            if( slide.firstElementChild && /section/gi.test(slide.firstElementChild.nodeName) ){
+                // This is a vertical slide wrapper, thus no slide
+                return;
+            }
+            
+            var bodyDiv = slide.querySelector('.slide-body');
+            if(!bodyDiv){
+                bodyDiv = bodyDivTpl.cloneNode(false);
+                var inserted = false;
+                toArray(slide.childNodes).forEach(function(c){
+                    if(c.classList && '.slide-content' in c.classList){
+                        return;
+                    } else {
+                        if(!inserted){
+                            slide.insertBefore(bodyDiv,c);
+                            inserted = true;
+                        }
+                        bodyDiv.appendChild(c); // will automatically remove 'c' from the slide
+                    }
+                });
+                if(!inserted){
+                    slide.insertBefore(bodyDiv,slide.firstChild);
+                }
+            }
+        } );
+        
 		// Handle sizing of elements with the 'stretch' class
-		toArray( dom.slides.querySelectorAll( 'section > .stretch' ) ).forEach( function( element ) {
+		toArray( dom.slides.querySelectorAll( '.slide-body > .stretch' ) ).forEach( function( element ) {
 
 			// Determine how much vertical space we can use
 			var remainingHeight = getRemainingHeight( element, height );
